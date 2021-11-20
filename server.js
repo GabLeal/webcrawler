@@ -14,6 +14,15 @@ app.use(bodyParser.urlencoded({ extended: false }))
 app.use(bodyParser.json())
 
 
+app.post('/criarfila', async (request, response)=>{
+    const {tipoinvestimento ,rentabilidade, prazo} = request.body
+
+    const rabbit = new RabbitMqService()
+    await rabbit.start();
+    rabbit.createQueue(`${tipoinvestimento}/${rentabilidade}/${prazo}`)
+    console.log('passou aqui')
+    response.send('criou')
+})
 
 app.post('/rabbit', async (request, response)=>{
     const rabbit = new RabbitMqService()
@@ -91,7 +100,6 @@ app.get('/tesouro', async (request, response)=>{
             console.log(json)
              count += 4
         }
-
 
         return {
             recomendacoes : itens

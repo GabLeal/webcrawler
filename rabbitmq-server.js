@@ -11,7 +11,6 @@ class RabbitMqService{
     }
 
     async start(){
-        console.log("entrou no start")
        this.conn = await amqplib.connect({
         host: 'localhost',
         port: 5672,
@@ -24,6 +23,12 @@ class RabbitMqService{
     async publishInQueue(queue, message){
         console.log("publicando na fila")
         return this.channel.sendToQueue(queue, Buffer.from(message))
+    }
+
+    async createQueue(queue){
+      this.channel.assertQueue(queue, {
+        durable: false
+      });
     }
 
 }
