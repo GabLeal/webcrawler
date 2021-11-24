@@ -15,11 +15,12 @@ app.use(bodyParser.json())
 
 
 app.post('/criarfila', async (request, response)=>{
-    const {tipoinvestimento ,rentabilidade, prazo} = request.body
+    // const {tipoinvestimento ,rentabilidade, prazo} = request.body
+    const { fila } = request.body
 
     const rabbit = new RabbitMqService()
     await rabbit.start();
-    rabbit.createQueue(`${tipoinvestimento}/${rentabilidade}/${prazo}`)
+    rabbit.createQueue(fila);
     console.log('passou aqui')
     response.send('criou')
 })
@@ -73,9 +74,6 @@ app.get('/tesouro', async (request, response)=>{
     const page = await browser.newPage()
     await page.goto('https://www.tesourodireto.com.br/titulos/precos-e-taxas.htm')
 
-
-
-    
     var pageContent = await page.evaluate(()=>{
 
         var nome = document.querySelectorAll('tbody td .td-invest-table__name__text');
@@ -85,6 +83,8 @@ app.get('/tesouro', async (request, response)=>{
         var count = 0;
 
         var aplicacoes = document.querySelectorAll('tbody td .td-invest-table__col__text')
+        const rabbit = new RabbitMqService()
+        await rabbit.start();
         
         for (var index = 0; index < (aplicacoes.length - 1) / 4; index++) {
 
@@ -95,7 +95,8 @@ app.get('/tesouro', async (request, response)=>{
                 preco : aplicacoes[2 + count].innerHTML,
                 prazo : aplicacoes[3 + count].innerHTML,
             }
-
+           
+            await rabbit.publishInQueue(`tesouro/${json.rentabilidade}/${json.aplicacao_minima}`, JSON.stringify(json))
             itens.push(json)
             console.log(json)
              count += 4
@@ -108,14 +109,6 @@ app.get('/tesouro', async (request, response)=>{
 
     console.log(pageContent)
     await browser.close()
-
-    const rabbit = new RabbitMqService()
-    await rabbit.start();
-   
-    await rabbit.publishInQueue('cdb', JSON.stringify({
-        "recomendacoes": pageContent.recomendacoes,
-       
-    }))
    
     response.send({
         "recomendacoes": pageContent.recomendacoes,
