@@ -26,24 +26,24 @@ module.exports = (sequelize: any, DataTypes: any) => {
     }
   };
   Agressivo.init({
-    user!: {
+    user: {
       type: DataTypes.STRING,
       allowNull: false,
       primaryKey: true
     },
-    acao_preco!: {
+    acao_preco: {
       type: DataTypes.STRING,
       allowNull: false
     },
-    acao_dividend_yield!: {
+    acao_dividend_yield: {
       type: DataTypes.STRING,
       allowNull: false
     },
-    bdr_preco!: {
+    bdr_preco: {
       type: DataTypes.STRING,
       allowNull: false
     },
-    bdr_dividend_yield!: {
+    bdr_dividend_yield: {
       type: DataTypes.STRING,
       allowNull: false
     },

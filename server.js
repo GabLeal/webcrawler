@@ -74,20 +74,19 @@ app.get('/tesouro', async (request, response)=>{
     const page = await browser.newPage()
     await page.goto('https://www.tesourodireto.com.br/titulos/precos-e-taxas.htm')
 
-    var pageContent = await page.evaluate(()=>{
-
+    var pageContent = await page.evaluate( async ()=>{
+        
         var nome = document.querySelectorAll('tbody td .td-invest-table__name__text');
-
+        
         var itens = []
 
         var count = 0;
-
+        
         var aplicacoes = document.querySelectorAll('tbody td .td-invest-table__col__text')
-        const rabbit = new RabbitMqService()
-        await rabbit.start();
+        
         
         for (var index = 0; index < (aplicacoes.length - 1) / 4; index++) {
-
+            
             var json = {
                 nome : `${nome[index].textContent}`,
                 rentabilidade : aplicacoes[count].innerHTML,
@@ -96,26 +95,29 @@ app.get('/tesouro', async (request, response)=>{
                 prazo : aplicacoes[3 + count].innerHTML,
             }
            
-            await rabbit.publishInQueue(`tesouro/${json.rentabilidade}/${json.aplicacao_minima}`, JSON.stringify(json))
             itens.push(json)
             console.log(json)
              count += 4
         }
-
-        return {
-            recomendacoes : itens
+            
+            return {
+                recomendacoes : itens
+            }
+        })
+        
+        console.log(pageContent)
+        await browser.close()
+        var rabbit = new RabbitMqService()
+        await rabbit.start();
+        for await (item of pageContent.recomendacoes){
+            await rabbit.publishInQueue(`tesouro/${item.rentabilidade}/${item.aplicacao_minima}`, JSON.stringify(item));
         }
+        response.send({
+            "recomendacoes": pageContent.recomendacoes,
+            
+        })
     })
-
-    console.log(pageContent)
-    await browser.close()
-   
-    response.send({
-        "recomendacoes": pageContent.recomendacoes,
-       
-    })
-})
-
+    
 
 app.get('/cdb', async (request, response)=>{
     const browser = await puppeteer.launch()
