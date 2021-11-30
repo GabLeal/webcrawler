@@ -5,7 +5,6 @@ const puppeteer = require('puppeteer');
 
 const RabbitMqService = require('./rabbitmq-server')
 
-
 const app = express();
 // parse application/x-www-form-urlencoded
 app.use(bodyParser.urlencoded({ extended: false }))
@@ -84,13 +83,21 @@ app.get('/tesouro', async (request, response)=>{
         
         var aplicacoes = document.querySelectorAll('tbody td .td-invest-table__col__text')
         
-        
+        var rent = "";
+        var apmin = "";
         for (var index = 0; index < (aplicacoes.length - 1) / 4; index++) {
             
+            rent = aplicacoes[count].innerHTML;
+            rent = rent.replace(",", ".");
+            rent = rent.replace("%", "");
+
+            apmin = aplicacoes[1 + count].innerHTML;
+            apmin = apmin.replace("R$ ", "");
+            apmin = apmin.replace(",", ".");
             var json = {
                 nome : `${nome[index].textContent}`,
-                rentabilidade : aplicacoes[count].innerHTML,
-                aplicacao_minima :aplicacoes[1 + count].innerHTML,
+                rentabilidade : rent,
+                aplicacao_minima : apmin,
                 preco : aplicacoes[2 + count].innerHTML,
                 prazo : aplicacoes[3 + count].innerHTML,
             }
@@ -110,7 +117,79 @@ app.get('/tesouro', async (request, response)=>{
         var rabbit = new RabbitMqService()
         await rabbit.start();
         for await (item of pageContent.recomendacoes){
-            await rabbit.publishInQueue(`tesouro/${item.rentabilidade}/${item.aplicacao_minima}`, JSON.stringify(item));
+            //rentabilidade de até 10%
+            if(parseFloat(item.rentabilidade) <= 10){
+                if (parseFloat(item.aplicacao_minima) <= 100){
+                    await rabbit.publishInQueue('tesouro/10/100', JSON.stringify(item));
+                }if(parseFloat(item.aplicacao_minima) <= 500){
+                    await rabbit.publishInQueue('tesouro/10/500', JSON.stringify(item));
+                }if(parseFloat(item.aplicacao_minima) <= 1000){
+                    await rabbit.publishInQueue('tesouro/10/1000', JSON.stringify(item));
+                }if(parseFloat(item.aplicacao_minima) <= 5000){
+                    await rabbit.publishInQueue('tesouro/10/5000', JSON.stringify(item));
+                }
+                await rabbit.publishInQueue('tesouro/10/5000+', JSON.stringify(item));
+            } //rentabilidade de até 25%
+            if(parseFloat(item.rentabilidade) <= 25){
+                if (parseFloat(item.aplicacao_minima) <= 100){
+                    await rabbit.publishInQueue('tesouro/25/100', JSON.stringify(item));
+                }if(parseFloat(item.aplicacao_minima) <= 500){
+                    await rabbit.publishInQueue('tesouro/25/500', JSON.stringify(item));
+                }if(parseFloat(item.aplicacao_minima) <= 1000){
+                    await rabbit.publishInQueue('tesouro/25/1000', JSON.stringify(item));
+                }if(parseFloat(item.aplicacao_minima) <= 5000){
+                    await rabbit.publishInQueue('tesouro/25/5000', JSON.stringify(item));
+                }
+                await rabbit.publishInQueue('tesouro/25/5000+', JSON.stringify(item));
+            } //rentabilidade de até 50%
+            if(parseFloat(item.rentabilidade) <= 50){
+                if (parseFloat(item.aplicacao_minima) <= 100){
+                    await rabbit.publishInQueue('tesouro/50/100', JSON.stringify(item));
+                }if(parseFloat(item.aplicacao_minima) <= 500){
+                    await rabbit.publishInQueue('tesouro/50/500', JSON.stringify(item));
+                }if(parseFloat(item.aplicacao_minima) <= 1000){
+                    await rabbit.publishInQueue('tesouro/50/1000', JSON.stringify(item));
+                }if(parseFloat(item.aplicacao_minima) <= 5000){
+                    await rabbit.publishInQueue('tesouro/50/5000', JSON.stringify(item));
+                }
+                await rabbit.publishInQueue('tesouro/50/5000+', JSON.stringify(item));
+            } //rentabilidade de até 75%
+            if(parseFloat(item.rentabilidade) <= 75){
+                if (parseFloat(item.aplicacao_minima) <= 100){
+                    await rabbit.publishInQueue('tesouro/75/100', JSON.stringify(item));
+                }if(parseFloat(item.aplicacao_minima) <= 500){
+                    await rabbit.publishInQueue('tesouro/75/500', JSON.stringify(item));
+                }if(parseFloat(item.aplicacao_minima) <= 1000){
+                    await rabbit.publishInQueue('tesouro/75/1000', JSON.stringify(item));
+                }if(parseFloat(item.aplicacao_minima) <= 5000){
+                    await rabbit.publishInQueue('tesouro/75/5000', JSON.stringify(item));
+                }
+                await rabbit.publishInQueue('tesouro/75/5000+', JSON.stringify(item));
+            } //rentabilidade de até 100%
+            if(parseFloat(item.rentabilidade) <= 100){
+                if (parseFloat(item.aplicacao_minima) <= 100){
+                    await rabbit.publishInQueue('tesouro/100/100', JSON.stringify(item));
+                }if(parseFloat(item.aplicacao_minima) <= 500){
+                    await rabbit.publishInQueue('tesouro/100/500', JSON.stringify(item));
+                }if(parseFloat(item.aplicacao_minima) <= 1000){
+                    await rabbit.publishInQueue('tesouro/100/1000', JSON.stringify(item));
+                }if(parseFloat(item.aplicacao_minima) <= 5000){
+                    await rabbit.publishInQueue('tesouro/100/5000', JSON.stringify(item));
+                }
+                await rabbit.publishInQueue('tesouro/100/5000+', JSON.stringify(item));
+            }
+            if (parseFloat(item.aplicacao_minima) <= 100){
+                await rabbit.publishInQueue('tesouro/100+/100', JSON.stringify(item));
+            }if(parseFloat(item.aplicacao_minima) <= 500){
+                await rabbit.publishInQueue('tesouro/100+/500', JSON.stringify(item));
+            }if(parseFloat(item.aplicacao_minima) <= 1000){
+                await rabbit.publishInQueue('tesouro/100+/1000', JSON.stringify(item));
+            }if(parseFloat(item.aplicacao_minima) <= 5000){
+                await rabbit.publishInQueue('tesouro/100+/5000', JSON.stringify(item));
+            }
+            await rabbit.publishInQueue('tesouro/100+/5000+', JSON.stringify(item));
+
+            // await rabbit.publishInQueue(`tesouro/${item.rentabilidade}/${item.aplicacao_minima}`, JSON.stringify(item));
         }
         response.send({
             "recomendacoes": pageContent.recomendacoes,
@@ -127,15 +206,26 @@ app.get('/cdb', async (request, response)=>{
     const pageContent = await page.evaluate(()=>{
         var itens = []
 
-        document.querySelectorAll('table tbody tr ').forEach((e)=>{
 
+        var rent = "";
+        var apmin = "";
+        document.querySelectorAll('table tbody tr ').forEach((e)=>{
+            
             var td =  e.querySelectorAll('td')
+
+            rent = td[1].lastElementChild.textContent;
+            rent = rent.replace(",", ".");
+            rent = rent.replace("%", "");
+
+            apmin = td[3].lastElementChild.textContent;
+            apmin = apmin.replace("R$ ", "");
+            apmin = apmin.replace(",", ".");
 
             var json = {
                 nome : td[0].lastElementChild.textContent,
-                rentabilidade : td[1].lastElementChild.textContent,
+                rentabilidade : rent,
                 resgate : td[2].lastElementChild.textContent,
-                aplicacao_minima :td[3].lastElementChild.textContent,
+                aplicacao_minima : apmin,
                 risco : td[4].lastElementChild.textContent,
                 fgc : td[5].lastElementChild.textContent
             }
@@ -151,6 +241,507 @@ app.get('/cdb', async (request, response)=>{
 
     console.log(pageContent)
     await browser.close()
+    var rabbit = new RabbitMqService()
+    await rabbit.start();
+    var resg = ""
+    for await (item of pageContent.recomendacoes){
+        //rentabilidade de até 10%
+        resg = item.resgate;
+        resg = resg.replace(" ano", "");
+        resg = resg.replace(" anos", "");
+        if(parseFloat(item.rentabilidade) <= 10){
+            if (parseFloat(item.aplicacao_minima) <= 100){
+                if(item.resgate.includes("Diário")){
+                    await rabbit.publishInQueue('cdb/10/100/d', JSON.stringify(item));
+                    await rabbit.publishInQueue('cdb/10/100/1', JSON.stringify(item));
+                    await rabbit.publishInQueue('cdb/10/100/5', JSON.stringify(item));
+                    await rabbit.publishInQueue('cdb/10/100/5+', JSON.stringify(item));
+                }else if(item.resgate.includes("meses") || item.resgate.includes("mês") || parseInt(resg) == 1){
+                    await rabbit.publishInQueue('cdb/10/100/1', JSON.stringify(item));
+                    await rabbit.publishInQueue('cdb/10/100/5', JSON.stringify(item));
+                    await rabbit.publishInQueue('cdb/10/100/5+', JSON.stringify(item));
+                }else if(parseInt(resg) <= 5){
+                    await rabbit.publishInQueue('cdb/10/100/5', JSON.stringify(item));
+                    await rabbit.publishInQueue('cdb/10/100/5+', JSON.stringify(item));
+                }else{
+                    await rabbit.publishInQueue('cdb/10/100/5+', JSON.stringify(item));
+                }
+            }if(parseFloat(item.aplicacao_minima) <= 500){
+                if(item.resgate.includes("Diário")){
+                    await rabbit.publishInQueue('cdb/10/500/d', JSON.stringify(item));
+                    await rabbit.publishInQueue('cdb/10/500/1', JSON.stringify(item));
+                    await rabbit.publishInQueue('cdb/10/500/5', JSON.stringify(item));
+                    await rabbit.publishInQueue('cdb/10/500/5+', JSON.stringify(item));
+                }else if(item.resgate.includes("meses") || item.resgate.includes("mês") || parseInt(resg) == 1){
+                    await rabbit.publishInQueue('cdb/10/500/1', JSON.stringify(item));
+                    await rabbit.publishInQueue('cdb/10/500/5', JSON.stringify(item));
+                    await rabbit.publishInQueue('cdb/10/500/5+', JSON.stringify(item));
+                }else if(parseInt(resg) <= 5){
+                    await rabbit.publishInQueue('cdb/10/500/5', JSON.stringify(item));
+                    await rabbit.publishInQueue('cdb/10/500/5+', JSON.stringify(item));
+                }else{
+                    await rabbit.publishInQueue('cdb/10/500/5+', JSON.stringify(item));
+                }
+            }if(parseFloat(item.aplicacao_minima) <= 1000){
+                if(item.resgate.includes("Diário")){
+                    await rabbit.publishInQueue('cdb/10/1000/d', JSON.stringify(item));
+                    await rabbit.publishInQueue('cdb/10/1000/1', JSON.stringify(item));
+                    await rabbit.publishInQueue('cdb/10/1000/5', JSON.stringify(item));
+                    await rabbit.publishInQueue('cdb/10/1000/5+', JSON.stringify(item));
+                }else if(item.resgate.includes("meses") || item.resgate.includes("mês") || parseInt(resg) == 1){
+                    await rabbit.publishInQueue('cdb/10/1000/1', JSON.stringify(item));
+                    await rabbit.publishInQueue('cdb/10/1000/5', JSON.stringify(item));
+                    await rabbit.publishInQueue('cdb/10/1000/5+', JSON.stringify(item));
+                }else if(parseInt(resg) <= 5){
+                    await rabbit.publishInQueue('cdb/10/1000/5', JSON.stringify(item));
+                    await rabbit.publishInQueue('cdb/10/1000/5+', JSON.stringify(item));
+                }else{
+                    await rabbit.publishInQueue('cdb/10/1000/5+', JSON.stringify(item));
+                }
+            }if(parseFloat(item.aplicacao_minima) <= 5000){
+                if(item.resgate.includes("Diário")){
+                    await rabbit.publishInQueue('cdb/10/5000/d', JSON.stringify(item));
+                    await rabbit.publishInQueue('cdb/10/5000/1', JSON.stringify(item));
+                    await rabbit.publishInQueue('cdb/10/5000/5', JSON.stringify(item));
+                    await rabbit.publishInQueue('cdb/10/5000/5+', JSON.stringify(item));
+                }else if(item.resgate.includes("meses") || item.resgate.includes("mês") || parseInt(resg) == 1){
+                    await rabbit.publishInQueue('cdb/10/5000/1', JSON.stringify(item));
+                    await rabbit.publishInQueue('cdb/10/5000/5', JSON.stringify(item));
+                    await rabbit.publishInQueue('cdb/10/5000/5+', JSON.stringify(item));
+                }else if(parseInt(resg) <= 5){
+                    await rabbit.publishInQueue('cdb/10/5000/5', JSON.stringify(item));
+                    await rabbit.publishInQueue('cdb/10/5000/5+', JSON.stringify(item));
+                }else{
+                    await rabbit.publishInQueue('cdb/10/5000/5+', JSON.stringify(item));
+                }
+            }
+            if(item.resgate.includes("Diário")){
+                await rabbit.publishInQueue('cdb/10/5000+/d', JSON.stringify(item));
+                await rabbit.publishInQueue('cdb/10/5000+/1', JSON.stringify(item));
+                await rabbit.publishInQueue('cdb/10/5000+/5', JSON.stringify(item));
+                await rabbit.publishInQueue('cdb/10/5000+/5+', JSON.stringify(item));
+            }else if(item.resgate.includes("meses") || item.resgate.includes("mês") || parseInt(resg) == 1){
+                await rabbit.publishInQueue('cdb/10/5000+/1', JSON.stringify(item));
+                await rabbit.publishInQueue('cdb/10/5000+/5', JSON.stringify(item));
+                await rabbit.publishInQueue('cdb/10/5000+/5+', JSON.stringify(item));
+            }else if(parseInt(resg) <= 5){
+                await rabbit.publishInQueue('cdb/10/5000+/5', JSON.stringify(item));
+                await rabbit.publishInQueue('cdb/10/5000+/5+', JSON.stringify(item));
+            }else{
+                await rabbit.publishInQueue('cdb/10/5000+/5+', JSON.stringify(item));
+            }
+        } //rentabilidade de até 25%
+        if(parseFloat(item.rentabilidade) <= 25){
+            if (parseFloat(item.aplicacao_minima) <= 100){
+                if(item.resgate.includes("Diário")){
+                    await rabbit.publishInQueue('cdb/25/100/d', JSON.stringify(item));
+                    await rabbit.publishInQueue('cdb/25/100/1', JSON.stringify(item));
+                    await rabbit.publishInQueue('cdb/25/100/5', JSON.stringify(item));
+                    await rabbit.publishInQueue('cdb/25/100/5+', JSON.stringify(item));
+                }else if(item.resgate.includes("meses") || item.resgate.includes("mês") || parseInt(resg) == 1){
+                    await rabbit.publishInQueue('cdb/25/100/1', JSON.stringify(item));
+                    await rabbit.publishInQueue('cdb/25/100/5', JSON.stringify(item));
+                    await rabbit.publishInQueue('cdb/25/100/5+', JSON.stringify(item));
+                }else if(parseInt(resg) <= 5){
+                    await rabbit.publishInQueue('cdb/25/100/5', JSON.stringify(item));
+                    await rabbit.publishInQueue('cdb/25/100/5+', JSON.stringify(item));
+                }else{
+                    await rabbit.publishInQueue('cdb/25/100/5+', JSON.stringify(item));
+                }
+            }if(parseFloat(item.aplicacao_minima) <= 500){
+                if(item.resgate.includes("Diário")){
+                    await rabbit.publishInQueue('cdb/25/500/d', JSON.stringify(item));
+                    await rabbit.publishInQueue('cdb/25/500/1', JSON.stringify(item));
+                    await rabbit.publishInQueue('cdb/25/500/5', JSON.stringify(item));
+                    await rabbit.publishInQueue('cdb/25/500/5+', JSON.stringify(item));
+                }else if(item.resgate.includes("meses") || item.resgate.includes("mês") || parseInt(resg) == 1){
+                    await rabbit.publishInQueue('cdb/25/500/1', JSON.stringify(item));
+                    await rabbit.publishInQueue('cdb/25/500/5', JSON.stringify(item));
+                    await rabbit.publishInQueue('cdb/25/500/5+', JSON.stringify(item));
+                }else if(parseInt(resg) <= 5){
+                    await rabbit.publishInQueue('cdb/25/500/5', JSON.stringify(item));
+                    await rabbit.publishInQueue('cdb/25/500/5+', JSON.stringify(item));
+                }else{
+                    await rabbit.publishInQueue('cdb/25/500/5+', JSON.stringify(item));
+                }
+            }if(parseFloat(item.aplicacao_minima) <= 1000){
+                if(item.resgate.includes("Diário")){
+                    await rabbit.publishInQueue('cdb/25/1000/d', JSON.stringify(item));
+                    await rabbit.publishInQueue('cdb/25/1000/1', JSON.stringify(item));
+                    await rabbit.publishInQueue('cdb/25/1000/5', JSON.stringify(item));
+                    await rabbit.publishInQueue('cdb/25/1000/5+', JSON.stringify(item));
+                }else if(item.resgate.includes("meses") || item.resgate.includes("mês") || parseInt(resg) == 1){
+                    await rabbit.publishInQueue('cdb/25/1000/1', JSON.stringify(item));
+                    await rabbit.publishInQueue('cdb/25/1000/5', JSON.stringify(item));
+                    await rabbit.publishInQueue('cdb/25/1000/5+', JSON.stringify(item));
+                }else if(parseInt(resg) <= 5){
+                    await rabbit.publishInQueue('cdb/25/1000/5', JSON.stringify(item));
+                    await rabbit.publishInQueue('cdb/25/1000/5+', JSON.stringify(item));
+                }else{
+                    await rabbit.publishInQueue('cdb/25/1000/5+', JSON.stringify(item));
+                }
+            }if(parseFloat(item.aplicacao_minima) <= 5000){
+                if(item.resgate.includes("Diário")){
+                    await rabbit.publishInQueue('cdb/25/5000/d', JSON.stringify(item));
+                    await rabbit.publishInQueue('cdb/25/5000/1', JSON.stringify(item));
+                    await rabbit.publishInQueue('cdb/25/5000/5', JSON.stringify(item));
+                    await rabbit.publishInQueue('cdb/25/5000/5+', JSON.stringify(item));
+                }else if(item.resgate.includes("meses") || item.resgate.includes("mês") || parseInt(resg) == 1){
+                    await rabbit.publishInQueue('cdb/25/5000/1', JSON.stringify(item));
+                    await rabbit.publishInQueue('cdb/25/5000/5', JSON.stringify(item));
+                    await rabbit.publishInQueue('cdb/25/5000/5+', JSON.stringify(item));
+                }else if(parseInt(resg) <= 5){
+                    await rabbit.publishInQueue('cdb/25/5000/5', JSON.stringify(item));
+                    await rabbit.publishInQueue('cdb/25/5000/5+', JSON.stringify(item));
+                }else{
+                    await rabbit.publishInQueue('cdb/25/5000/5+', JSON.stringify(item));
+                }
+            }
+            if(item.resgate.includes("Diário")){
+                await rabbit.publishInQueue('cdb/25/5000+/d', JSON.stringify(item));
+                await rabbit.publishInQueue('cdb/25/5000+/1', JSON.stringify(item));
+                await rabbit.publishInQueue('cdb/25/5000+/5', JSON.stringify(item));
+                await rabbit.publishInQueue('cdb/25/5000+/5+', JSON.stringify(item));
+            }else if(item.resgate.includes("meses") || item.resgate.includes("mês") || parseInt(resg) == 1){
+                await rabbit.publishInQueue('cdb/25/5000+/1', JSON.stringify(item));
+                await rabbit.publishInQueue('cdb/25/5000+/5', JSON.stringify(item));
+                await rabbit.publishInQueue('cdb/25/5000+/5+', JSON.stringify(item));
+            }else if(parseInt(resg) <= 5){
+                await rabbit.publishInQueue('cdb/25/5000+/5', JSON.stringify(item));
+                await rabbit.publishInQueue('cdb/25/5000+/5+', JSON.stringify(item));
+            }else{
+                await rabbit.publishInQueue('cdb/25/5000+/5+', JSON.stringify(item));
+            }
+        } //rentabilidade de até 50%
+        if(parseFloat(item.rentabilidade) <= 50){
+            if (parseFloat(item.aplicacao_minima) <= 100){
+                if(item.resgate.includes("Diário")){
+                    await rabbit.publishInQueue('cdb/50/100/d', JSON.stringify(item));
+                    await rabbit.publishInQueue('cdb/50/100/1', JSON.stringify(item));
+                    await rabbit.publishInQueue('cdb/50/100/5', JSON.stringify(item));
+                    await rabbit.publishInQueue('cdb/50/100/5+', JSON.stringify(item));
+                }else if(item.resgate.includes("meses") || item.resgate.includes("mês") || parseInt(resg) == 1){
+                    await rabbit.publishInQueue('cdb/50/100/1', JSON.stringify(item));
+                    await rabbit.publishInQueue('cdb/50/100/5', JSON.stringify(item));
+                    await rabbit.publishInQueue('cdb/50/100/5+', JSON.stringify(item));
+                }else if(parseInt(resg) <= 5){
+                    await rabbit.publishInQueue('cdb/50/100/5', JSON.stringify(item));
+                    await rabbit.publishInQueue('cdb/50/100/5+', JSON.stringify(item));
+                }else{
+                    await rabbit.publishInQueue('cdb/50/100/5+', JSON.stringify(item));
+                }
+            }if(parseFloat(item.aplicacao_minima) <= 500){
+                if(item.resgate.includes("Diário")){
+                    await rabbit.publishInQueue('cdb/50/500/d', JSON.stringify(item));
+                    await rabbit.publishInQueue('cdb/50/500/1', JSON.stringify(item));
+                    await rabbit.publishInQueue('cdb/50/500/5', JSON.stringify(item));
+                    await rabbit.publishInQueue('cdb/50/500/5+', JSON.stringify(item));
+                }else if(item.resgate.includes("meses") || item.resgate.includes("mês") || parseInt(resg) == 1){
+                    await rabbit.publishInQueue('cdb/50/500/1', JSON.stringify(item));
+                    await rabbit.publishInQueue('cdb/50/500/5', JSON.stringify(item));
+                    await rabbit.publishInQueue('cdb/50/500/5+', JSON.stringify(item));
+                }else if(parseInt(resg) <= 5){
+                    await rabbit.publishInQueue('cdb/50/500/5', JSON.stringify(item));
+                    await rabbit.publishInQueue('cdb/50/500/5+', JSON.stringify(item));
+                }else{
+                    await rabbit.publishInQueue('cdb/50/500/5+', JSON.stringify(item));
+                }
+            }if(parseFloat(item.aplicacao_minima) <= 1000){
+                if(item.resgate.includes("Diário")){
+                    await rabbit.publishInQueue('cdb/50/1000/d', JSON.stringify(item));
+                    await rabbit.publishInQueue('cdb/50/1000/1', JSON.stringify(item));
+                    await rabbit.publishInQueue('cdb/50/1000/5', JSON.stringify(item));
+                    await rabbit.publishInQueue('cdb/50/1000/5+', JSON.stringify(item));
+                }else if(item.resgate.includes("meses") || item.resgate.includes("mês") || parseInt(resg) == 1){
+                    await rabbit.publishInQueue('cdb/50/1000/1', JSON.stringify(item));
+                    await rabbit.publishInQueue('cdb/50/1000/5', JSON.stringify(item));
+                    await rabbit.publishInQueue('cdb/50/1000/5+', JSON.stringify(item));
+                }else if(parseInt(resg) <= 5){
+                    await rabbit.publishInQueue('cdb/50/1000/5', JSON.stringify(item));
+                    await rabbit.publishInQueue('cdb/50/1000/5+', JSON.stringify(item));
+                }else{
+                    await rabbit.publishInQueue('cdb/50/1000/5+', JSON.stringify(item));
+                }
+            }if(parseFloat(item.aplicacao_minima) <= 5000){
+                if(item.resgate.includes("Diário")){
+                    await rabbit.publishInQueue('cdb/50/5000/d', JSON.stringify(item));
+                    await rabbit.publishInQueue('cdb/50/5000/1', JSON.stringify(item));
+                    await rabbit.publishInQueue('cdb/50/5000/5', JSON.stringify(item));
+                    await rabbit.publishInQueue('cdb/50/5000/5+', JSON.stringify(item));
+                }else if(item.resgate.includes("meses") || item.resgate.includes("mês") || parseInt(resg) == 1){
+                    await rabbit.publishInQueue('cdb/50/5000/1', JSON.stringify(item));
+                    await rabbit.publishInQueue('cdb/50/5000/5', JSON.stringify(item));
+                    await rabbit.publishInQueue('cdb/50/5000/5+', JSON.stringify(item));
+                }else if(parseInt(resg) <= 5){
+                    await rabbit.publishInQueue('cdb/50/5000/5', JSON.stringify(item));
+                    await rabbit.publishInQueue('cdb/50/5000/5+', JSON.stringify(item));
+                }else{
+                    await rabbit.publishInQueue('cdb/50/5000/5+', JSON.stringify(item));
+                }
+            }
+            if(item.resgate.includes("Diário")){
+                await rabbit.publishInQueue('cdb/50/5000+/d', JSON.stringify(item));
+                await rabbit.publishInQueue('cdb/50/5000+/1', JSON.stringify(item));
+                await rabbit.publishInQueue('cdb/50/5000+/5', JSON.stringify(item));
+                await rabbit.publishInQueue('cdb/50/5000+/5+', JSON.stringify(item));
+            }else if(item.resgate.includes("meses") || item.resgate.includes("mês") || parseInt(resg) == 1){
+                await rabbit.publishInQueue('cdb/50/5000+/1', JSON.stringify(item));
+                await rabbit.publishInQueue('cdb/50/5000+/5', JSON.stringify(item));
+                await rabbit.publishInQueue('cdb/50/5000+/5+', JSON.stringify(item));
+            }else if(parseInt(resg) <= 5){
+                await rabbit.publishInQueue('cdb/50/5000+/5', JSON.stringify(item));
+                await rabbit.publishInQueue('cdb/50/5000+/5+', JSON.stringify(item));
+            }else{
+                await rabbit.publishInQueue('cdb/50/5000+/5+', JSON.stringify(item));
+            }
+        } //rentabilidade de até 75%
+        if(parseFloat(item.rentabilidade) <= 75){
+            if (parseFloat(item.aplicacao_minima) <= 100){
+                if(item.resgate.includes("Diário")){
+                    await rabbit.publishInQueue('cdb/75/100/d', JSON.stringify(item));
+                    await rabbit.publishInQueue('cdb/75/100/1', JSON.stringify(item));
+                    await rabbit.publishInQueue('cdb/75/100/5', JSON.stringify(item));
+                    await rabbit.publishInQueue('cdb/75/100/5+', JSON.stringify(item));
+                }else if(item.resgate.includes("meses") || item.resgate.includes("mês") || parseInt(resg) == 1){
+                    await rabbit.publishInQueue('cdb/75/100/1', JSON.stringify(item));
+                    await rabbit.publishInQueue('cdb/75/100/5', JSON.stringify(item));
+                    await rabbit.publishInQueue('cdb/75/100/5+', JSON.stringify(item));
+                }else if(parseInt(resg) <= 5){
+                    await rabbit.publishInQueue('cdb/75/100/5', JSON.stringify(item));
+                    await rabbit.publishInQueue('cdb/75/100/5+', JSON.stringify(item));
+                }else{
+                    await rabbit.publishInQueue('cdb/75/100/5+', JSON.stringify(item));
+                }
+            }if(parseFloat(item.aplicacao_minima) <= 500){
+                if(item.resgate.includes("Diário")){
+                    await rabbit.publishInQueue('cdb/75/500/d', JSON.stringify(item));
+                    await rabbit.publishInQueue('cdb/75/500/1', JSON.stringify(item));
+                    await rabbit.publishInQueue('cdb/75/500/5', JSON.stringify(item));
+                    await rabbit.publishInQueue('cdb/75/500/5+', JSON.stringify(item));
+                }else if(item.resgate.includes("meses") || item.resgate.includes("mês") || parseInt(resg) == 1){
+                    await rabbit.publishInQueue('cdb/75/500/1', JSON.stringify(item));
+                    await rabbit.publishInQueue('cdb/75/500/5', JSON.stringify(item));
+                    await rabbit.publishInQueue('cdb/75/500/5+', JSON.stringify(item));
+                }else if(parseInt(resg) <= 5){
+                    await rabbit.publishInQueue('cdb/75/500/5', JSON.stringify(item));
+                    await rabbit.publishInQueue('cdb/75/500/5+', JSON.stringify(item));
+                }else{
+                    await rabbit.publishInQueue('cdb/75/500/5+', JSON.stringify(item));
+                }
+            }if(parseFloat(item.aplicacao_minima) <= 1000){
+                if(item.resgate.includes("Diário")){
+                    await rabbit.publishInQueue('cdb/75/1000/d', JSON.stringify(item));
+                    await rabbit.publishInQueue('cdb/75/1000/1', JSON.stringify(item));
+                    await rabbit.publishInQueue('cdb/75/1000/5', JSON.stringify(item));
+                    await rabbit.publishInQueue('cdb/75/1000/5+', JSON.stringify(item));
+                }else if(item.resgate.includes("meses") || item.resgate.includes("mês") || parseInt(resg) == 1){
+                    await rabbit.publishInQueue('cdb/75/1000/1', JSON.stringify(item));
+                    await rabbit.publishInQueue('cdb/75/1000/5', JSON.stringify(item));
+                    await rabbit.publishInQueue('cdb/75/1000/5+', JSON.stringify(item));
+                }else if(parseInt(resg) <= 5){
+                    await rabbit.publishInQueue('cdb/75/1000/5', JSON.stringify(item));
+                    await rabbit.publishInQueue('cdb/75/1000/5+', JSON.stringify(item));
+                }else{
+                    await rabbit.publishInQueue('cdb/75/1000/5+', JSON.stringify(item));
+                }
+            }if(parseFloat(item.aplicacao_minima) <= 5000){
+                if(item.resgate.includes("Diário")){
+                    await rabbit.publishInQueue('cdb/75/5000/d', JSON.stringify(item));
+                    await rabbit.publishInQueue('cdb/75/5000/1', JSON.stringify(item));
+                    await rabbit.publishInQueue('cdb/75/5000/5', JSON.stringify(item));
+                    await rabbit.publishInQueue('cdb/75/5000/5+', JSON.stringify(item));
+                }else if(item.resgate.includes("meses") || item.resgate.includes("mês") || parseInt(resg) == 1){
+                    await rabbit.publishInQueue('cdb/75/5000/1', JSON.stringify(item));
+                    await rabbit.publishInQueue('cdb/75/5000/5', JSON.stringify(item));
+                    await rabbit.publishInQueue('cdb/75/5000/5+', JSON.stringify(item));
+                }else if(parseInt(resg) <= 5){
+                    await rabbit.publishInQueue('cdb/75/5000/5', JSON.stringify(item));
+                    await rabbit.publishInQueue('cdb/75/5000/5+', JSON.stringify(item));
+                }else{
+                    await rabbit.publishInQueue('cdb/75/5000/5+', JSON.stringify(item));
+                }
+            }
+            if(item.resgate.includes("Diário")){
+                await rabbit.publishInQueue('cdb/75/5000+/d', JSON.stringify(item));
+                await rabbit.publishInQueue('cdb/75/5000+/1', JSON.stringify(item));
+                await rabbit.publishInQueue('cdb/75/5000+/5', JSON.stringify(item));
+                await rabbit.publishInQueue('cdb/75/5000+/5+', JSON.stringify(item));
+            }else if(item.resgate.includes("meses") || item.resgate.includes("mês") || parseInt(resg) == 1){
+                await rabbit.publishInQueue('cdb/75/5000+/1', JSON.stringify(item));
+                await rabbit.publishInQueue('cdb/75/5000+/5', JSON.stringify(item));
+                await rabbit.publishInQueue('cdb/75/5000+/5+', JSON.stringify(item));
+            }else if(parseInt(resg) <= 5){
+                await rabbit.publishInQueue('cdb/75/5000+/5', JSON.stringify(item));
+                await rabbit.publishInQueue('cdb/75/5000+/5+', JSON.stringify(item));
+            }else{
+                await rabbit.publishInQueue('cdb/75/5000+/5+', JSON.stringify(item));
+            }
+        } //rentabilidade de até 100%
+        if(parseFloat(item.rentabilidade) <= 100){
+            if (parseFloat(item.aplicacao_minima) <= 100){
+                if(item.resgate.includes("Diário")){
+                    await rabbit.publishInQueue('cdb/100/100/d', JSON.stringify(item));
+                    await rabbit.publishInQueue('cdb/100/100/1', JSON.stringify(item));
+                    await rabbit.publishInQueue('cdb/100/100/5', JSON.stringify(item));
+                    await rabbit.publishInQueue('cdb/100/100/5+', JSON.stringify(item));
+                }else if(item.resgate.includes("meses") || item.resgate.includes("mês") || parseInt(resg) == 1){
+                    await rabbit.publishInQueue('cdb/100/100/1', JSON.stringify(item));
+                    await rabbit.publishInQueue('cdb/100/100/5', JSON.stringify(item));
+                    await rabbit.publishInQueue('cdb/100/100/5+', JSON.stringify(item));
+                }else if(parseInt(resg) <= 5){
+                    await rabbit.publishInQueue('cdb/100/100/5', JSON.stringify(item));
+                    await rabbit.publishInQueue('cdb/100/100/5+', JSON.stringify(item));
+                }else{
+                    await rabbit.publishInQueue('cdb/100/100/5+', JSON.stringify(item));
+                }
+            }if(parseFloat(item.aplicacao_minima) <= 500){
+                if(item.resgate.includes("Diário")){
+                    await rabbit.publishInQueue('cdb/100/500/d', JSON.stringify(item));
+                    await rabbit.publishInQueue('cdb/100/500/1', JSON.stringify(item));
+                    await rabbit.publishInQueue('cdb/100/500/5', JSON.stringify(item));
+                    await rabbit.publishInQueue('cdb/100/500/5+', JSON.stringify(item));
+                }else if(item.resgate.includes("meses") || item.resgate.includes("mês") || parseInt(resg) == 1){
+                    await rabbit.publishInQueue('cdb/100/500/1', JSON.stringify(item));
+                    await rabbit.publishInQueue('cdb/100/500/5', JSON.stringify(item));
+                    await rabbit.publishInQueue('cdb/100/500/5+', JSON.stringify(item));
+                }else if(parseInt(resg) <= 5){
+                    await rabbit.publishInQueue('cdb/100/500/5', JSON.stringify(item));
+                    await rabbit.publishInQueue('cdb/100/500/5+', JSON.stringify(item));
+                }else{
+                    await rabbit.publishInQueue('cdb/100/500/5+', JSON.stringify(item));
+                }
+            }if(parseFloat(item.aplicacao_minima) <= 1000){
+                if(item.resgate.includes("Diário")){
+                    await rabbit.publishInQueue('cdb/100/1000/d', JSON.stringify(item));
+                    await rabbit.publishInQueue('cdb/100/1000/1', JSON.stringify(item));
+                    await rabbit.publishInQueue('cdb/100/1000/5', JSON.stringify(item));
+                    await rabbit.publishInQueue('cdb/100/1000/5+', JSON.stringify(item));
+                }else if(item.resgate.includes("meses") || item.resgate.includes("mês") || parseInt(resg) == 1){
+                    await rabbit.publishInQueue('cdb/100/1000/1', JSON.stringify(item));
+                    await rabbit.publishInQueue('cdb/100/1000/5', JSON.stringify(item));
+                    await rabbit.publishInQueue('cdb/100/1000/5+', JSON.stringify(item));
+                }else if(parseInt(resg) <= 5){
+                    await rabbit.publishInQueue('cdb/100/1000/5', JSON.stringify(item));
+                    await rabbit.publishInQueue('cdb/100/1000/5+', JSON.stringify(item));
+                }else{
+                    await rabbit.publishInQueue('cdb/100/1000/5+', JSON.stringify(item));
+                }
+            }if(parseFloat(item.aplicacao_minima) <= 5000){
+                if(item.resgate.includes("Diário")){
+                    await rabbit.publishInQueue('cdb/100/5000/d', JSON.stringify(item));
+                    await rabbit.publishInQueue('cdb/100/5000/1', JSON.stringify(item));
+                    await rabbit.publishInQueue('cdb/100/5000/5', JSON.stringify(item));
+                    await rabbit.publishInQueue('cdb/100/5000/5+', JSON.stringify(item));
+                }else if(item.resgate.includes("meses") || item.resgate.includes("mês") || parseInt(resg) == 1){
+                    await rabbit.publishInQueue('cdb/100/5000/1', JSON.stringify(item));
+                    await rabbit.publishInQueue('cdb/100/5000/5', JSON.stringify(item));
+                    await rabbit.publishInQueue('cdb/100/5000/5+', JSON.stringify(item));
+                }else if(parseInt(resg) <= 5){
+                    await rabbit.publishInQueue('cdb/100/5000/5', JSON.stringify(item));
+                    await rabbit.publishInQueue('cdb/100/5000/5+', JSON.stringify(item));
+                }else{
+                    await rabbit.publishInQueue('cdb/100/5000/5+', JSON.stringify(item));
+                }
+            }
+            if(item.resgate.includes("Diário")){
+                await rabbit.publishInQueue('cdb/100/5000+/d', JSON.stringify(item));
+                await rabbit.publishInQueue('cdb/100/5000+/1', JSON.stringify(item));
+                await rabbit.publishInQueue('cdb/100/5000+/5', JSON.stringify(item));
+                await rabbit.publishInQueue('cdb/100/5000+/5+', JSON.stringify(item));
+            }else if(item.resgate.includes("meses") || item.resgate.includes("mês") || parseInt(resg) == 1){
+                await rabbit.publishInQueue('cdb/100/5000+/1', JSON.stringify(item));
+                await rabbit.publishInQueue('cdb/100/5000+/5', JSON.stringify(item));
+                await rabbit.publishInQueue('cdb/100/5000+/5+', JSON.stringify(item));
+            }else if(parseInt(resg) <= 5){
+                await rabbit.publishInQueue('cdb/100/5000+/5', JSON.stringify(item));
+                await rabbit.publishInQueue('cdb/100/5000+/5+', JSON.stringify(item));
+            }else{
+                await rabbit.publishInQueue('cdb/100/5000+/5+', JSON.stringify(item));
+            }
+        }
+        if (parseFloat(item.aplicacao_minima) <= 100){
+            if(item.resgate.includes("Diário")){
+                await rabbit.publishInQueue('cdb/100+/100/d', JSON.stringify(item));
+                await rabbit.publishInQueue('cdb/100+/100/1', JSON.stringify(item));
+                await rabbit.publishInQueue('cdb/100+/100/5', JSON.stringify(item));
+                await rabbit.publishInQueue('cdb/100+/100/5+', JSON.stringify(item));
+            }else if(item.resgate.includes("meses") || item.resgate.includes("mês") || parseInt(resg) == 1){
+                await rabbit.publishInQueue('cdb/100+/100/1', JSON.stringify(item));
+                await rabbit.publishInQueue('cdb/100+/100/5', JSON.stringify(item));
+                await rabbit.publishInQueue('cdb/100+/100/5+', JSON.stringify(item));
+            }else if(parseInt(resg) <= 5){
+                await rabbit.publishInQueue('cdb/100+/100/5', JSON.stringify(item));
+                await rabbit.publishInQueue('cdb/100+/100/5+', JSON.stringify(item));
+            }else{
+                await rabbit.publishInQueue('cdb/100+/100/5+', JSON.stringify(item));
+            }
+        }if(parseFloat(item.aplicacao_minima) <= 500){
+            if(item.resgate.includes("Diário")){
+                await rabbit.publishInQueue('cdb/100+/500/d', JSON.stringify(item));
+                await rabbit.publishInQueue('cdb/100+/500/1', JSON.stringify(item));
+                await rabbit.publishInQueue('cdb/100+/500/5', JSON.stringify(item));
+                await rabbit.publishInQueue('cdb/100+/500/5+', JSON.stringify(item));
+            }else if(item.resgate.includes("meses") || item.resgate.includes("mês") || parseInt(resg) == 1){
+                await rabbit.publishInQueue('cdb/100+/500/1', JSON.stringify(item));
+                await rabbit.publishInQueue('cdb/100+/500/5', JSON.stringify(item));
+                await rabbit.publishInQueue('cdb/100+/500/5+', JSON.stringify(item));
+            }else if(parseInt(resg) <= 5){
+                await rabbit.publishInQueue('cdb/100+/500/5', JSON.stringify(item));
+                await rabbit.publishInQueue('cdb/100+/500/5+', JSON.stringify(item));
+            }else{
+                await rabbit.publishInQueue('cdb/100+/500/5+', JSON.stringify(item));
+            }
+        }if(parseFloat(item.aplicacao_minima) <= 1000){
+            if(item.resgate.includes("Diário")){
+                await rabbit.publishInQueue('cdb/100+/1000/d', JSON.stringify(item));
+                await rabbit.publishInQueue('cdb/100+/1000/1', JSON.stringify(item));
+                await rabbit.publishInQueue('cdb/100+/1000/5', JSON.stringify(item));
+                await rabbit.publishInQueue('cdb/100+/1000/5+', JSON.stringify(item));
+            }else if(item.resgate.includes("meses") || item.resgate.includes("mês") || parseInt(resg) == 1){
+                await rabbit.publishInQueue('cdb/100+/1000/1', JSON.stringify(item));
+                await rabbit.publishInQueue('cdb/100+/1000/5', JSON.stringify(item));
+                await rabbit.publishInQueue('cdb/100+/1000/5+', JSON.stringify(item));
+            }else if(parseInt(resg) <= 5){
+                await rabbit.publishInQueue('cdb/100+/1000/5', JSON.stringify(item));
+                await rabbit.publishInQueue('cdb/100+/1000/5+', JSON.stringify(item));
+            }else{
+                await rabbit.publishInQueue('cdb/100+/1000/5+', JSON.stringify(item));
+            }
+        }if(parseFloat(item.aplicacao_minima) <= 5000){
+            if(item.resgate.includes("Diário")){
+                await rabbit.publishInQueue('cdb/100+/5000/d', JSON.stringify(item));
+                await rabbit.publishInQueue('cdb/100+/5000/1', JSON.stringify(item));
+                await rabbit.publishInQueue('cdb/100+/5000/5', JSON.stringify(item));
+                await rabbit.publishInQueue('cdb/100+/5000/5+', JSON.stringify(item));
+            }else if(item.resgate.includes("meses") || item.resgate.includes("mês") || parseInt(resg) == 1){
+                await rabbit.publishInQueue('cdb/100+/5000/1', JSON.stringify(item));
+                await rabbit.publishInQueue('cdb/100+/5000/5', JSON.stringify(item));
+                await rabbit.publishInQueue('cdb/100+/5000/5+', JSON.stringify(item));
+            }else if(parseInt(resg) <= 5){
+                await rabbit.publishInQueue('cdb/100+/5000/5', JSON.stringify(item));
+                await rabbit.publishInQueue('cdb/100+/5000/5+', JSON.stringify(item));
+            }else{
+                await rabbit.publishInQueue('cdb/100+/5000/5+', JSON.stringify(item));
+            }
+        }
+        if(item.resgate.includes("Diário")){
+            await rabbit.publishInQueue('cdb/100+/5000+/d', JSON.stringify(item));
+            await rabbit.publishInQueue('cdb/100+/5000+/1', JSON.stringify(item));
+            await rabbit.publishInQueue('cdb/100+/5000+/5', JSON.stringify(item));
+            await rabbit.publishInQueue('cdb/100+/5000+/5+', JSON.stringify(item));
+        }else if(item.resgate.includes("meses") || item.resgate.includes("mês") || parseInt(resg) == 1){
+            await rabbit.publishInQueue('cdb/100+/5000+/1', JSON.stringify(item));
+            await rabbit.publishInQueue('cdb/100+/5000+/5', JSON.stringify(item));
+            await rabbit.publishInQueue('cdb/100+/5000+/5+', JSON.stringify(item));
+        }else if(parseInt(resg) <= 5){
+            await rabbit.publishInQueue('cdb/100+/5000+/5', JSON.stringify(item));
+            await rabbit.publishInQueue('cdb/100+/5000+/5+', JSON.stringify(item));
+        }else{
+            await rabbit.publishInQueue('cdb/100+/5000+/5+', JSON.stringify(item));
+        }
+
+        // await rabbit.publishInQueue(`tesouro/${item.rentabilidade}/${item.aplicacao_minima}`, JSON.stringify(item));
+    }
     response.send({
         "recomendacoes": pageContent.recomendacoes,
        
