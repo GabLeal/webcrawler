@@ -20,7 +20,6 @@ app.post('/criarfila', async (request, response)=>{
     const rabbit = new RabbitMqService()
     await rabbit.start();
     rabbit.createQueue(fila);
-    console.log('passou aqui')
     response.send('criou')
 })
 
@@ -59,7 +58,6 @@ app.get('/', async (request, response)=>{
         }
     })
 
-    console.log(pageContent)
     await browser.close()
     response.send({
         "recomendacoes": pageContent.recomendacoes,
@@ -103,7 +101,6 @@ app.get('/tesouro', async (request, response)=>{
             }
            
             itens.push(json)
-            console.log(json)
              count += 4
         }
             
@@ -112,13 +109,14 @@ app.get('/tesouro', async (request, response)=>{
             }
         })
         
-        console.log(pageContent)
         await browser.close()
         var rabbit = new RabbitMqService()
         await rabbit.start();
         for await (item of pageContent.recomendacoes){
             //rentabilidade de até 10%
+           
             if(parseFloat(item.rentabilidade) <= 10){
+                console.log(item)
                 if (parseFloat(item.aplicacao_minima) <= 100){
                     await rabbit.publishInQueue('tesouro/10/100', JSON.stringify(item));
                 }if(parseFloat(item.aplicacao_minima) <= 500){
@@ -210,17 +208,21 @@ app.get('/cdb', async (request, response)=>{
         var rent = "";
         var apmin = "";
         document.querySelectorAll('table tbody tr ').forEach((e)=>{
+           
             
             var td =  e.querySelectorAll('td')
 
             rent = td[1].lastElementChild.textContent;
             rent = rent.replace(",", ".");
             rent = rent.replace("%", "");
+            rent = rent.replace(" a.a", "");
+            rent = rent.replace(" CDI", "");
 
             apmin = td[3].lastElementChild.textContent;
             apmin = apmin.replace("R$ ", "");
             apmin = apmin.replace(",", ".");
-
+           
+           
             var json = {
                 nome : td[0].lastElementChild.textContent,
                 rentabilidade : rent,
@@ -229,6 +231,8 @@ app.get('/cdb', async (request, response)=>{
                 risco : td[4].lastElementChild.textContent,
                 fgc : td[5].lastElementChild.textContent
             }
+            console.log('--------')
+            console.log(json)
             itens.push(json)
         })
      
@@ -239,7 +243,6 @@ app.get('/cdb', async (request, response)=>{
         }
     })
 
-    console.log(pageContent)
     await browser.close()
     var rabbit = new RabbitMqService()
     await rabbit.start();
@@ -759,7 +762,6 @@ app.get('/fundos', async (request, response)=>{
 
         var fundos = document.querySelectorAll('#table-ranking tbody tr')
         
-        
         for (var index = 0; index < 15; index++) {
             var item = fundos[index];
             var td =  item.querySelectorAll('td')
@@ -789,18 +791,18 @@ app.get('/fundos', async (request, response)=>{
                 rentabilidade_patrimonial_no_periodo: td[21].textContent
             }
             itens.push(json)
-
-    
+            
+            var preco_atual = json.preco_atual
+            var dividendo_yield = json.dividendo_yield
+            await rabbit.publishInQueue(`fundos/${preco_atual}/${dividendo_yield}`, JSON.stringify(json));
         }
         
-
     
         return {
             recomendacoes : itens
         }
     })
 
-    console.log(pageContent)
     await browser.close()
     response.send({
         "recomendacoes": pageContent.recomendacoes,
