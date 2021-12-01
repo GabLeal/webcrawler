@@ -216,6 +216,8 @@ app.get('/cdb', async (request, response)=>{
             rent = td[1].lastElementChild.textContent;
             rent = rent.replace(",", ".");
             rent = rent.replace("%", "");
+            rent = rent.replace(" a.a", "");
+            rent = rent.replace(" CDI", "");
 
             apmin = td[3].lastElementChild.textContent;
             apmin = apmin.replace("R$ ", "");
@@ -759,18 +761,27 @@ app.get('/fundos', async (request, response)=>{
 
         var fundos = document.querySelectorAll('#table-ranking tbody tr')
         
-        
+        var preAt = "";
+        var divyel = "";
         for (var index = 0; index < 15; index++) {
             var item = fundos[index];
             var td =  item.querySelectorAll('td')
 
+            preAt = td[2].textContent;
+            preAt = preAt.replace(".", "");
+            preAt = preAt.replace("R$ ", "");
+
+            divyel = td[5].textContent;
+            divyel = divyel.replace(",", ".");
+            divyel = divyel.replace("%", "");
+
             var json = {
                 cod_fundo : td[0].textContent,
                 setor : td[1].textContent,
-                preco_atual : td[2].textContent,
+                preco_atual : preAt,
                 liquidez_diaria :td[3].textContent,
                 dividendo : td[4].textContent,
-                dividendo_yield : td[5].textContent,
+                dividendo_yield : divyel,
                 dy_3m_acumulado : td[6].textContent,
                 dy_6m_acumulado : td[7].textContent,
                 dy_12m_acumulado : td[8].textContent,
@@ -790,10 +801,7 @@ app.get('/fundos', async (request, response)=>{
             }
             itens.push(json)
 
-    
         }
-        
-
     
         return {
             recomendacoes : itens
@@ -802,6 +810,49 @@ app.get('/fundos', async (request, response)=>{
 
     console.log(pageContent)
     await browser.close()
+    var rabbit = new RabbitMqService()
+    await rabbit.start();
+    for await (item of pageContent.recomendacoes){
+        if(parseFloat(item.preco_atual) <= 65){
+            if (parseFloat(item.dividendo_yield) <= 0.95){
+                await rabbit.publishInQueue('fundos/65/0.95', JSON.stringify(item));
+            }if(parseFloat(item.dividendo_yield) <= 1.05){
+                await rabbit.publishInQueue('fundos/65/1.05', JSON.stringify(item));
+            }if(parseFloat(item.dividendo_yield) <= 1.15){
+                await rabbit.publishInQueue('fundos/65/1.15', JSON.stringify(item));
+            }
+            await rabbit.publishInQueue('fundos/65/1.15+', JSON.stringify(item));
+        } //preco_atual de até 25%
+        if(parseFloat(item.preco_atual) <= 90){
+            if (parseFloat(item.dividendo_yield) <= 0.95){
+                await rabbit.publishInQueue('fundos/90/0.95', JSON.stringify(item));
+            }if(parseFloat(item.dividendo_yield) <= 1.05){
+                await rabbit.publishInQueue('fundos/90/1.05', JSON.stringify(item));
+            }if(parseFloat(item.dividendo_yield) <= 1.15){
+                await rabbit.publishInQueue('fundos/90/1.15', JSON.stringify(item));
+            }
+            await rabbit.publishInQueue('fundos/90/1.15+', JSON.stringify(item));
+        } //preco_atual de até 50%
+        if(parseFloat(item.preco_atual) <= 125){
+            if (parseFloat(item.dividendo_yield) <= 0.95){
+                await rabbit.publishInQueue('fundos/125/0.95', JSON.stringify(item));
+            }if(parseFloat(item.dividendo_yield) <= 1.05){
+                await rabbit.publishInQueue('fundos/125/1.05', JSON.stringify(item));
+            }if(parseFloat(item.dividendo_yield) <= 1.15){
+                await rabbit.publishInQueue('fundos/125/1.15', JSON.stringify(item));
+            }
+            await rabbit.publishInQueue('fundos/125/1.15+', JSON.stringify(item));
+        }
+        if (parseFloat(item.dividendo_yield) <= 0.95){
+            await rabbit.publishInQueue('fundos/125+/0.95', JSON.stringify(item));
+        }if(parseFloat(item.dividendo_yield) <= 1.05){
+            await rabbit.publishInQueue('fundos/125+/1.05', JSON.stringify(item));
+        }if(parseFloat(item.dividendo_yield) <= 1.15){
+            await rabbit.publishInQueue('fundos/125+/1.15', JSON.stringify(item));
+        }
+        await rabbit.publishInQueue('fundos/125+/1.15+', JSON.stringify(item));
+    }
+
     response.send({
         "recomendacoes": pageContent.recomendacoes,
        
