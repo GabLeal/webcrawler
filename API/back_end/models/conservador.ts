@@ -7,7 +7,6 @@ export interface IConservador {
   cdb_rentabilidade: string;
   cdb_data_resgate: string;
   cdb_aplicacao_minima: string;
-  cdb_risco: string;
   tesouro_rentabilidade: string;
   tesouro_aplicacao_minima: string;
 }
@@ -18,7 +17,6 @@ module.exports = (sequelize: any, DataTypes: any) => {
     cdb_rentabilidade!: string;
     cdb_data_resgate!: string;
     cdb_aplicacao_minima!: string;
-    cdb_risco!: string;
     tesouro_rentabilidade!: string;
     tesouro_aplicacao_minima!: string;
 
@@ -43,10 +41,6 @@ module.exports = (sequelize: any, DataTypes: any) => {
       allowNull: false
     },
     cdb_aplicacao_minima: {
-      type: DataTypes.STRING,
-      allowNull: false
-    },
-    cdb_risco: {
       type: DataTypes.STRING,
       allowNull: false
     },

@@ -83,11 +83,11 @@ export default class UserController
                 const newPerfil: IConservador = req.body;
                 await db.Conservador.create(newPerfil);
                 if(op ==  "cdb"){
-                    filas.push("cdb/" +newPerfil.cdb_rentabilidade +"/" +newPerfil.cdb_aplicacao_minima +"/" +newPerfil.cdb_data_resgate +"/" +newPerfil.cdb_risco);
+                    filas.push("cdb/" +newPerfil.cdb_rentabilidade +"/" +newPerfil.cdb_aplicacao_minima +"/" +newPerfil.cdb_data_resgate);
                 }else if(op == "tesouro"){
                     filas.push("tesouro/" +newPerfil.tesouro_rentabilidade +"/" +newPerfil.tesouro_aplicacao_minima)
                 }else{
-                    filas.push("cdb/" +newPerfil.cdb_rentabilidade +"/" +newPerfil.cdb_aplicacao_minima +"/" +newPerfil.cdb_data_resgate +"/" +newPerfil.cdb_risco);
+                    filas.push("cdb/" +newPerfil.cdb_rentabilidade +"/" +newPerfil.cdb_aplicacao_minima +"/" +newPerfil.cdb_data_resgate);
                     filas.push("tesouro/" +newPerfil.tesouro_rentabilidade +"/" +newPerfil.tesouro_aplicacao_minima)
                 }
             } else if (perfil == "Agressivo"){
@@ -105,7 +105,7 @@ export default class UserController
                 const newPerfil: IModerado = req.body;
                 await db.Moderado.create(newPerfil);
                 if(op ==  "cdb"){
-                    filas.push("cdb/" +newPerfil.cdb_rentabilidade +"/" +newPerfil.cdb_aplicacao_minima +"/" +newPerfil.cdb_data_resgate +"/" +newPerfil.cdb_risco);
+                    filas.push("cdb/" +newPerfil.cdb_rentabilidade +"/" +newPerfil.cdb_aplicacao_minima +"/" +newPerfil.cdb_data_resgate);
                 }else if(op == "tesouro"){
                     filas.push("tesouro/" +newPerfil.tesouro_rentabilidade +"/" +newPerfil.tesouro_aplicacao_minima)
                 }else if(op == "fundo"){
@@ -115,7 +115,7 @@ export default class UserController
                 }else if(op == "brd"){
                     filas.push("brd/" +newPerfil.bdr_preco +"/" +newPerfil.bdr_dividend_yield)
                 }else{
-                    filas.push("cdb/" +newPerfil.cdb_rentabilidade +"/" +newPerfil.cdb_aplicacao_minima +"/" +newPerfil.cdb_data_resgate +"/" +newPerfil.cdb_risco);
+                    filas.push("cdb/" +newPerfil.cdb_rentabilidade +"/" +newPerfil.cdb_aplicacao_minima +"/" +newPerfil.cdb_data_resgate);
                     filas.push("tesouro/" +newPerfil.tesouro_rentabilidade +"/" +newPerfil.tesouro_aplicacao_minima)
                     filas.push("fundo/" +newPerfil.fundos_aplicacao_minima +"/" +newPerfil.fundos_valor_retornado)
                     filas.push("acao/" +newPerfil.acao_preco +"/" +newPerfil.acao_dividend_yield)
